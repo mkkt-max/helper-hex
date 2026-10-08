@@ -1,0 +1,28 @@
+name: Build APK
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.9
+      - name: Распаковать и найти проект
+        run: |
+          if [ -f HexHelper.zip ]; then unzip -q -o HexHelper.zip; fi
+          P=$(dirname "$(find . -name settings.gradle -not -path './.git/*' | head -1)")
+          echo "PROJECT=$P" >> "$GITHUB_ENV"
+      - name: Собрать APK
+        working-directory: ${{ env.PROJECT }}
+        run: gradle assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HexHelper-apk
+          path: ${{ env.PROJECT }}/app/build/outputs/apk/debug/app-debug.apk
